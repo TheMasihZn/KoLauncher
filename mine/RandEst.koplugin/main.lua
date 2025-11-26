@@ -5,8 +5,8 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
 -- Extend WidgetContainer like Calibre does
-local RandEst = WidgetContainer:extend{
-	name = "RandEst",
+local Est = WidgetContainer:extend{
+	name = "Est.",
 	is_doc_only = false,
 }
 
@@ -20,7 +20,7 @@ end
 local KINDLE_PLUGIN_DIR = current_plugin_dir()
 -- Fallback if dynamic path fails
 if not KINDLE_PLUGIN_DIR then
-	KINDLE_PLUGIN_DIR = "/mnt/us/koreader/plugins/RandEst.koplugin/"
+	KINDLE_PLUGIN_DIR = "/mnt/us/koreader/plugins/est.koplugin/"
 end
 
 local SCRIPT_PATH = KINDLE_PLUGIN_DIR .. "rand.sh"
@@ -33,7 +33,7 @@ local function file_exists(path)
 	return false
 end
 
-function RandEst:init()
+function Est:init()
 	self:onDispatcherRegisterActions()
 
 	-- FIX: Use UIManager directly. 'self.ui' might be nil at this stage.
@@ -44,15 +44,15 @@ function RandEst:init()
 			UIManager.menu:registerToDocumentMenu(self)
 		end
 	else
-		print("RandEst: UIManager.menu is not available.")
+		print("Est: UIManager.menu is not available.")
 	end
 end
 
-function RandEst:onDispatcherRegisterActions()
-	Dispatcher:registerAction("randest_run_script", {
+function Est:onDispatcherRegisterActions()
+	Dispatcher:registerAction("est_run_script", {
 		category = "none",
-		event = "RandEstRunScript",
-		title = _("Run RandEst script"),
+		event = "EstRunScript",
+		title = _("Ask Est."),
 		general = true,
 	})
 	--Dispatcher:registerAction("run_sh_script", {
@@ -65,18 +65,18 @@ function RandEst:onDispatcherRegisterActions()
 end
 
 -- Handler for the event registered above
-function RandEst:onRandEstRunScript()
+function Est:onEstRunScript()
 	self:runScript()
 	return true
 end
 
 -- Handler for the event registered above
-function RandEst:onRunCustomScript()
+function Est:onRunCustomScript()
 	self:runScript()
 	return true
 end
 
-function RandEst:runScript()
+function Est:runScript()
 	if not file_exists(SCRIPT_PATH) then
 		UIManager:show(InfoMessage:new{ text = _("rand.sh not found at: ") .. (SCRIPT_PATH or "unknown") })
 		return
@@ -110,9 +110,9 @@ function RandEst:runScript()
 end
 
 -- Called by KOReader when constructing the menu
-function RandEst:addToMainMenu(menu_items)
-	menu_items.randest = {
-		text = _("RandEst"),
+function Est:addToMainMenu(menu_items)
+	menu_items.est = {
+		text = _("Est."),
 		sub_item_table = {
 			{
 				text = _("Run rand.sh"),
@@ -125,10 +125,10 @@ function RandEst:addToMainMenu(menu_items)
 end
 
 -- Called by KOReader when constructing the reader (document) menu
-function RandEst:addToDocumentMenu(menu_items)
+function Est:addToDocumentMenu(menu_items)
 -- Reuse the same structure as in the main menu
-	menu_items.randest = {
-		text = _("RandEst"),
+	menu_items.Est = {
+		text = _("Est"),
 		sub_item_table = {
 			{
 				text = _("Run rand.sh"),
@@ -141,7 +141,7 @@ function RandEst:addToDocumentMenu(menu_items)
 end
 
 -- search options available from UI
---function RandEst:getSearchMenuTable()
+--function Est:getSearchMenuTable()
 --	return {
 --		{
 --			text = _("Manage Scripts"),
@@ -262,4 +262,4 @@ end
 --	}
 --end
 
-return RandEst
+return Est

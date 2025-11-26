@@ -1,6 +1,6 @@
 local _ = require("gettext")
 return {
-    name = "RandEst",
-    fullname = _("Random Estekhareh"),
+    name = "Est.",
+    fullname = _("Estekhareh"),
     description = _([[offline, simple]]),
 }
