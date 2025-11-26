@@ -8,7 +8,7 @@ rem   run.bat K            -> use K: as the Kindle drive
 rem   run.bat K:           -> same as above
 
 set "SCRIPT_DIR=%~dp0"
-set "SRC=%SCRIPT_DIR%koreader"
+set "SRC=%SCRIPT_DIR%mine\koreader\plugins"
 
 rem Determine project name from folder containing this script
 for %%I in ("%SCRIPT_DIR%.") do set "PROJECT_NAME=%%~nxI"
@@ -30,11 +30,11 @@ if defined KINDLE_DRIVE_RAW (
 )
 
 rem Attempt 1: Use PowerShell Get-Volume to find volume label "Kindle"
-for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "^$vol=Get-Volume -ErrorAction SilentlyContinue ^| Where-Object { ^$_.FileSystemLabel -eq 'Kindle' } ^| Select-Object -First 1 -ExpandProperty DriveLetter; if(^$vol){Write-Output ^"^$vol^:"}"`) do (
-  set "KINDLE_DRIVE=%%D"
-)
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "^$vol=Get-Volume -ErrorAction SilentlyContinue ^| Where-Object { ^$_.FileSystemLabel -eq 'Kindle' } ^| Select-Object -First 1 -ExpandProperty DriveLetter; if(^$vol){Write-Output ^"^${vol}^:"}"`) do (
+      set "KINDLE_DRIVE=%%D"
+    )
 
-if defined KINDLE_DRIVE goto :HaveDrive
+    if defined KINDLE_DRIVE goto :HaveDrive
 
 rem Attempt 2: Fallback to WMIC (deprecated but widely available)
 for /f "tokens=1,2" %%A in ('wmic logicaldisk get name^, volumename ^| findstr ":"') do (
@@ -66,31 +66,48 @@ if not exist "%KINDLE_DRIVE%\" (
 
 echo ------------------------------------------------------------
 echo Source:      "%SRC%"
-set "DEST=%KINDLE_DRIVE%\koreader"
+set "DEST=%SCRIPT_DIR%compiled\plugins"
 
-rem Remove any previous deployment to ensure a clean copy on each run
-if exist "%DEST%" (
-  echo [INFO] Removing previous version at "%DEST%"
-  rmdir /S /Q "%DEST%"
-)
-
-rem Ensure destination directory exists (creates intermediate dirs as needed)
+rem Ensure destination directory exists
 mkdir "%DEST%" >nul 2>&1
 
-echo Destination: "%DEST%"  (Kindle extensions)
+echo Destination: "%DEST%"
+
+rem Process each plugin folder
+for /d %%D in ("%SRC%\*") do (
+    set "PLUGIN_NAME=%%~nxD"
+    echo Processing plugin: !PLUGIN_NAME!
+
+    rem Remove existing plugin folder except data directory
+    if exist "%DEST%\!PLUGIN_NAME!" (
+        for /d %%F in ("%DEST%\!PLUGIN_NAME!\*") do (
+            if /i not "%%~nxF"=="data" (
+                rmdir /s /q "%%F"
+            )
+        )
+        for %%F in ("%DEST%\!PLUGIN_NAME!\*.*") do (
+            del /q "%%F"
+        )
+    ) else (
+        mkdir "%DEST%\!PLUGIN_NAME!" >nul 2>&1
+    )
+)
 echo ------------------------------------------------------------
 
-rem Perform copy using ROBOCOPY. Copies files and subdirectories.
+rem Copy plugin contents using ROBOCOPY, excluding data directory
 rem Flags:
 rem  /E   -> include subdirectories (including empty)
 rem  /R:1 -> retry once on failure
 rem  /W:1 -> wait 1 sec between retries
 rem  /COPY:DAT -> copy Data, Attributes, Timestamps
-rem  /XO  -> skip older files (avoid overwriting newer on Kindle)
+rem  /XD  -> exclude directories
 rem  /NFL /NDL -> concise logging (no file/dir lists), keep summary
 rem  /NP -> no progress per file
 
-robocopy "%SRC%" "%DEST%" /E /R:1 /W:1 /COPY:DAT /XO /NFL /NDL /NP
+for /d %%D in ("%SRC%\*") do (
+    set "PLUGIN_NAME=%%~nxD"
+    robocopy "%%D" "%DEST%\!PLUGIN_NAME!" /E /R:1 /W:1 /COPY:DAT /XD "%DEST%\!PLUGIN_NAME!\data" /NFL /NDL /NP
+)
 set "RC=%ERRORLEVEL%"
 
 rem Robocopy returns codes: 0 (no files), 1 (some files copied) are success; 2-7 also often acceptable.
