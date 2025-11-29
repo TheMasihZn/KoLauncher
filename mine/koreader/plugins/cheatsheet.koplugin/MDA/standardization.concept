@@ -1,0 +1,23 @@
+Data Standardization (Z-Score Normalization):
+
+For a dataset X with values x_i, standardization formula is:
+z_i = (x_i - μ)/σ
+
+where:
+μ = mean of original data
+σ = standard deviation of original data
+
+Proof that mean(z) = 0:
+mean(z) = (1/n)∑z_i
+        = (1/n)∑((x_i - μ)/σ)
+        = (1/nσ)[∑x_i - nμ]
+        = (1/σ)[μ - μ]
+        = 0
+
+Proof that variance(z) = 1:
+var(z) = (1/n)∑(z_i - mean(z))²
+       = (1/n)∑(z_i - 0)²   [since mean(z)=0]
+       = (1/n)∑((x_i-μ)/σ)²
+       = (1/nσ²)∑(x_i-μ)²
+       = σ²/σ²
+       = 1

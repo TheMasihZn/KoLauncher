@@ -66,7 +66,7 @@ if not exist "%KINDLE_DRIVE%\" (
 
 echo ------------------------------------------------------------
 echo Source:      "%SRC%"
-set "DEST=%SCRIPT_DIR%compiled\plugins"
+set "DEST=%SCRIPT_DIR%.compiled\koreader\plugins"
 
 rem Ensure destination directory exists
 mkdir "%DEST%" >nul 2>&1
@@ -113,9 +113,51 @@ set "RC=%ERRORLEVEL%"
 rem Robocopy returns codes: 0 (no files), 1 (some files copied) are success; 2-7 also often acceptable.
 rem We treat 0-7 as success and others as error.
 if %RC% LSS 8 (
-  echo [SUCCESS] KOReader files synchronized to Kindle at %DEST%\
+  echo [SUCCESS] KOReader files synchronized to local .compiled at %DEST%\
   echo.
-  exit /b 0
+  rem ------------------------------------------------------------
+  rem Now mirror from .compiled to the connected Kindle
+  rem Destination on Kindle: <Drive>:\extensions\koreader\plugins
+  set "KINDLE_DEST=%KINDLE_DRIVE%\extensions\koreader\plugins"
+  echo Kindle destination: "%KINDLE_DEST%"
+
+  rem Ensure Kindle destination exists
+  mkdir "%KINDLE_DEST%" >nul 2>&1
+
+  rem Clean each Kindle plugin folder except its data directory
+  for /d %%D in ("%DEST%\*") do (
+      set "PLUGIN_NAME=%%~nxD"
+      echo Preparing Kindle plugin: !PLUGIN_NAME!
+      if exist "%KINDLE_DEST%\!PLUGIN_NAME!" (
+          for /d %%F in ("%KINDLE_DEST%\!PLUGIN_NAME!\*") do (
+              if /i not "%%~nxF"=="data" (
+                  rmdir /s /q "%%F"
+              )
+          )
+          for %%F in ("%KINDLE_DEST%\!PLUGIN_NAME!\*.*") do (
+              del /q "%%F"
+          )
+      ) else (
+          mkdir "%KINDLE_DEST%\!PLUGIN_NAME!" >nul 2>&1
+      )
+  )
+
+  rem Copy plugin contents from .compiled to Kindle, excluding data directories
+  for /d %%D in ("%DEST%\*") do (
+      set "PLUGIN_NAME=%%~nxD"
+      robocopy "%%D" "%KINDLE_DEST%\!PLUGIN_NAME!" /E /R:1 /W:1 /COPY:DAT /XD "%KINDLE_DEST%\!PLUGIN_NAME!\data" /NFL /NDL /NP
+  )
+  set "RC2=%ERRORLEVEL%"
+
+  if !RC2! LSS 8 (
+      echo [SUCCESS] KOReader plugins deployed to Kindle at %KINDLE_DEST%\
+      echo.
+      exit /b 0
+  ) else (
+      echo [ERROR] Robocopy to Kindle failed with exit code !RC2!.
+      echo.
+      exit /b !RC2!
+  )
 ) else (
   echo [ERROR] Robocopy failed with exit code %RC%.
   echo.

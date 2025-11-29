@@ -1,1 +1,4 @@
-/mine/python/TelegramBotServer/api.env
+/mine/py/TelegramBotServer/api.env
+/.compiled/
+/.koreader/
+/.compiled/koreader/

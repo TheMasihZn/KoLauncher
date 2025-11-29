@@ -1,0 +1,120 @@
+
+
+Data Standardization (Z-Score Normalization):
+
+For a dataset X with values x_i, standardization formula is:
+z_i = (x_i - μ)/σ
+
+where:
+μ = mean of original data
+σ = standard deviation of original data
+
+Proof that mean(z) = 0:
+mean(z) = (1/n)∑z_i 
+        = (1/n)∑((x_i - μ)/σ)
+        = (1/nσ)[∑x_i - nμ]
+        = (1/σ)[μ - μ]
+        = 0
+
+Proof that variance(z) = 1:
+var(z) = (1/n)∑(z_i - mean(z))²
+       = (1/n)∑(z_i - 0)²   [since mean(z)=0]
+       = (1/n)∑((x_i-μ)/σ)²
+       = (1/nσ²)∑(x_i-μ)²
+       = σ²/σ² 
+       = 1
+
+Conditional Probability (Bayes' Theorem):
+P(A|B) = P(B|A)P(A)/P(B)
+where:
+P(A|B) = probability of A given B occurred
+P(B|A) = probability of B given A occurred 
+P(A), P(B) = individual probabilities
+
+Proof:
+P(A|B) = P(A∩B)/P(B)    [definition of conditional probability]
+P(B|A) = P(A∩B)/P(A)    [definition of conditional probability]
+P(A∩B) = P(B|A)P(A)     [multiply both sides by P(A)]
+Therefore:
+P(A|B) = P(A∩B)/P(B) = P(B|A)P(A)/P(B)
+
+Box and Whisker Plot:
+A visualization showing:
+- Minimum value
+- First quartile (Q1)
+- Median (Q2)
+- Third quartile (Q3)
+- Maximum value
+IQR = Q3 - Q1
+Outliers: points < Q1-1.5*IQR or > Q3+1.5*IQR
+
+Distribution Function:
+F(x) = P(X ≤ x)
+Properties:
+- Non-decreasing
+- Right-continuous
+- lim(x→-∞)F(x) = 0
+- lim(x→∞)F(x) = 1
+
+Gini Coefficient (M):
+M = (1/n)∑|xi - xj|/(2μ)
+where:
+μ = mean of the distribution
+Measures statistical dispersion
+Range: [0,1], 0=perfect equality
+
+Empirical Distribution Function:
+Fn(x) = (1/n)∑I(Xi ≤ x)
+where:
+I() is indicator function
+n = sample size
+Estimates the true CDF
+
+Bilinear Form:
+B(x,y): V×V → R
+Properties:
+- Linear in first argument
+- Linear in second argument
+Example: dot product
+
+Gram-Schmidt Process:
+For vectors {v1,...,vn}:
+u1 = v1
+uk = vk - ∑⟨vk,ui⟩ui/||ui||²
+where k=2,...,n
+
+Orthonormal Basis:
+Set of vectors {e1,...,en} where:
+⟨ei,ej⟩ = δij (Kronecker delta)
+||ei|| = 1 for all i
+
+Matrix Rank:
+- Number of linearly independent rows/columns
+- Equals dimension of column space
+- Equals dimension of row space
+rank(A) ≤ min(m,n) for m×n matrix
+
+Pythagorean Distance:
+d = √[(x2-x1)² + (y2-y1)²]
+In n dimensions:
+d = √[∑(pi-qi)²]
+where i=1 to n
+
+Conditional bays, bucks wiskers
+Distribution function,
+
+Property of probability =>he wants conditional
+
+Cisini kisini or smth(a type of Mean) which wont change and is shown by M
+
+Imperical Distribution function (descriptive pdf)
+
+What's bilinear form
+
+Gram-schmitt
+
+Orthonarmal basis
+
+Rank?
+
+What is the distance? فیثاغورس
