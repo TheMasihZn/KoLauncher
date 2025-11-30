@@ -27,10 +27,6 @@ local plugins_disabled = G_reader_settings:readSetting("plugins_disabled")
 if type(plugins_disabled) ~= "table" then
     plugins_disabled = {}
 end
-if plugins_disabled["coverbrowser"] == nil or plugins_disabled["coverbrowser"] == false then
-    logger.warn(ptdbg.logprefix, "CoverBrowser enabled")
-    return { disabled = true }
-end
 
 local fonts_missing = true
 if ptutil.installFonts() then
@@ -204,62 +200,103 @@ function CoverBrowser:init()
 
     -- on first ever run and occasionally afterward it will be necessary to create
     -- new settings keys in the 'config' table and some of them require restarting
-    -- koreader to fully apply.
+    -- koreader to fully apply. Defaults and migrations are now read from a separate file.
     local restart_needed = false
-    if not G_reader_settings:isTrue("aaaProjectTitle_initial_default_setup_done2") then
+    local ok_defaults, PTDefaults = pcall(require, "defaults")
+    if not ok_defaults then
+        logger.warn(ptdbg.logprefix, "Failed to load defaults for ProjectTitle plugin: ", PTDefaults)
+    end
+
+    -- Initial defaults
+    local initial_flag = (PTDefaults and PTDefaults.initial_setup_flag) or "aaaProjectTitle_initial_default_setup_done2"
+    if not G_reader_settings:isTrue(initial_flag) then
         logger.info(ptdbg.logprefix, "Initalizing settings")
         -- Set up default display modes on first launch
         -- but only if no display mode has been set yet
         if not BookInfoManager:getSetting("filemanager_display_mode")
             and not BookInfoManager:getSetting("history_display_mode") then
-            BookInfoManager:saveSetting("filemanager_display_mode", "list_image_meta")
-            BookInfoManager:saveSetting("history_display_mode", "list_image_meta")
-            BookInfoManager:saveSetting("collection_display_mode", "list_image_meta")
+            local fm = PTDefaults and PTDefaults.initial and PTDefaults.initial.filemanager_display_mode or "list_image_meta"
+            local hm = PTDefaults and PTDefaults.initial and PTDefaults.initial.history_display_mode or "list_image_meta"
+            local cm = PTDefaults and PTDefaults.initial and PTDefaults.initial.collection_display_mode or "list_image_meta"
+            BookInfoManager:saveSetting("filemanager_display_mode", fm)
+            BookInfoManager:saveSetting("history_display_mode", hm)
+            BookInfoManager:saveSetting("collection_display_mode", cm)
         end
-        -- initalize settings with their defaults
-        BookInfoManager:saveSetting("config_version", "1")
-        BookInfoManager:saveSetting("series_mode", "series_in_separate_line")
-        BookInfoManager:saveSetting("hide_file_info", true)
-        BookInfoManager:saveSetting("unified_display_mode", true)
-        BookInfoManager:saveSetting("show_progress_in_mosaic", true)
-        BookInfoManager:saveSetting("autoscan_on_eject", false)
-        G_reader_settings:makeTrue("aaaProjectTitle_initial_default_setup_done2")
+        -- initialize remaining settings with their defaults from external file
+        if PTDefaults and PTDefaults.initial then
+            for k, v in pairs(PTDefaults.initial) do
+                if k ~= "filemanager_display_mode" and k ~= "history_display_mode" and k ~= "collection_display_mode" then
+                    BookInfoManager:saveSetting(k, v)
+                end
+            end
+        else
+            -- fallback to previous hardcoded base when defaults file is not available
+            BookInfoManager:saveSetting("config_version", "1")
+            BookInfoManager:saveSetting("series_mode", "series_in_separate_line")
+            BookInfoManager:saveSetting("hide_file_info", true)
+            BookInfoManager:saveSetting("unified_display_mode", true)
+            BookInfoManager:saveSetting("show_progress_in_mosaic", true)
+            BookInfoManager:saveSetting("autoscan_on_eject", false)
+        end
+        G_reader_settings:makeTrue(initial_flag)
         restart_needed = true
     end
 
-    -- initalize additional settings with their defaults
+    -- Initialize additional settings and run migrations from external file
     if BookInfoManager:getSetting("config_version") == nil then
         -- catch installs done before setting versioning
         logger.info(ptdbg.logprefix, "Migrating settings to version 1")
-        BookInfoManager:saveSetting("config_version", "1")
+        local v1 = (PTDefaults and PTDefaults.initial and PTDefaults.initial.config_version) or "1"
+        BookInfoManager:saveSetting("config_version", v1)
     end
-    if BookInfoManager:getSetting("config_version") == 1 then
-        logger.info(ptdbg.logprefix, "Migrating settings to version 2")
-        BookInfoManager:saveSetting("disable_auto_foldercovers", false)
-        BookInfoManager:saveSetting("force_max_progressbars", false)
-        BookInfoManager:saveSetting("opened_at_top_of_library", true)
-        BookInfoManager:saveSetting("reverse_footer", false)
-        BookInfoManager:saveSetting("use_custom_bookstatus", true)
-        BookInfoManager:saveSetting("replace_footer_text", false)
-        BookInfoManager:saveSetting("show_name_grid_folders", true)
-        BookInfoManager:saveSetting("config_version", "2")
-        restart_needed = true
-    end
-    if BookInfoManager:getSetting("config_version") == 2 then
-        logger.info(ptdbg.logprefix, "Migrating settings to version 3")
-        BookInfoManager:saveSetting("force_no_progressbars", false)
-        BookInfoManager:saveSetting("config_version", "3")
-    end
-    if BookInfoManager:getSetting("config_version") == 3 then
-        logger.info(ptdbg.logprefix, "Migrating settings to version 4")
-        BookInfoManager:saveSetting("force_focus_indicator", false)
-        BookInfoManager:saveSetting("use_stacked_foldercovers", false)
-        BookInfoManager:saveSetting("config_version", "4")
-    end
-    if BookInfoManager:getSetting("config_version") == 4 then
-        logger.info(ptdbg.logprefix, "Migrating settings to version 5")
-        BookInfoManager:saveSetting("show_tags", false)
-        BookInfoManager:saveSetting("config_version", "5")
+
+    if PTDefaults and PTDefaults.migrations and #PTDefaults.migrations > 0 then
+        -- Apply sequential migrations as needed
+        local current_version = tostring(BookInfoManager:getSetting("config_version") or "")
+        for _, step in ipairs(PTDefaults.migrations) do
+            if current_version == tostring(step.from) then
+                logger.info(ptdbg.logprefix, T("Migrating settings to version {{v}}", { v = step.to }))
+                for k, v in pairs(step.settings or {}) do
+                    BookInfoManager:saveSetting(k, v)
+                end
+                -- Ensure version is bumped even if defaults file forgot to set it
+                if not (step.settings and step.settings.config_version) then
+                    BookInfoManager:saveSetting("config_version", tostring(step.to))
+                end
+                if step.restart then restart_needed = true end
+                current_version = tostring(step.to)
+            end
+        end
+    else
+        -- fallback to previous inline migrations if defaults file missing
+        if BookInfoManager:getSetting("config_version") == 1 then
+            logger.info(ptdbg.logprefix, "Migrating settings to version 2")
+            BookInfoManager:saveSetting("disable_auto_foldercovers", false)
+            BookInfoManager:saveSetting("force_max_progressbars", false)
+            BookInfoManager:saveSetting("opened_at_top_of_library", true)
+            BookInfoManager:saveSetting("reverse_footer", false)
+            BookInfoManager:saveSetting("use_custom_bookstatus", true)
+            BookInfoManager:saveSetting("replace_footer_text", false)
+            BookInfoManager:saveSetting("show_name_grid_folders", true)
+            BookInfoManager:saveSetting("config_version", "2")
+            restart_needed = true
+        end
+        if BookInfoManager:getSetting("config_version") == 2 then
+            logger.info(ptdbg.logprefix, "Migrating settings to version 3")
+            BookInfoManager:saveSetting("force_no_progressbars", false)
+            BookInfoManager:saveSetting("config_version", "3")
+        end
+        if BookInfoManager:getSetting("config_version") == 3 then
+            logger.info(ptdbg.logprefix, "Migrating settings to version 4")
+            BookInfoManager:saveSetting("force_focus_indicator", false)
+            BookInfoManager:saveSetting("use_stacked_foldercovers", false)
+            BookInfoManager:saveSetting("config_version", "4")
+        end
+        if BookInfoManager:getSetting("config_version") == 4 then
+            logger.info(ptdbg.logprefix, "Migrating settings to version 5")
+            BookInfoManager:saveSetting("show_tags", false)
+            BookInfoManager:saveSetting("config_version", "5")
+        end
     end
 
     -- restart if needed

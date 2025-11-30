@@ -19,9 +19,12 @@ local Launcher = WidgetContainer:extend{
 local function trim(s) return (s or ""):gsub("^%s+", ""):gsub("%s+$", "") end
 
 local function path_join(a, b)
-    if not a or a == "" then return b end
-    if a:sub(-1) == "/" then return a .. b end
-    return a .. "/" .. b
+    if not a or not b then return "" end
+    if a:sub(-1) == "/" then
+        return a .. b
+    else
+        return a .. "/" .. b
+    end
 end
 
 local DESKTOP_DIR = "/mnt/us/Desktop"

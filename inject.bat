@@ -31,7 +31,7 @@ if not "%~1"=="" (
 )
 
 if "%KINDLE_DRIVE%"=="" (
-  for %%X in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
+  for %%X in (A B E F G H I J K L M N O P Q R S T U V W X Y Z) do (
     if exist "%%X:\" if exist "%%X:\koreader" (
       set "KINDLE_DRIVE=%%X:"
       goto :FOUND_DRIVE

@@ -4,7 +4,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
-local Menu = require("plugins/kualrunner.koplugin.menu")
+local Menu = require("menu")
 
 local SETTINGS_KEY = "kualrunner_mappings"
 

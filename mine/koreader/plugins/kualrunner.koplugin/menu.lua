@@ -18,8 +18,7 @@ local function make_run_item(self, code, cmd)
 end
 
 function Menu:addToMainMenu(menu_items)
-    if not menu_items or not menu_items.developer_options then return end
-    if not menu_items.developer_options.sub_item_table then return end
+    if not menu_items  then return end
 
     -- Build dynamic list of mapped codes
     local mapped_list = { }
@@ -30,7 +29,7 @@ function Menu:addToMainMenu(menu_items)
         table.sort(mapped_list, function(a, b) return a.text < b.text end)
     end
 
-    table.insert(menu_items.developer_options.sub_item_table, {
+    table.insert(menu_items.sub_item_table, {
         text = _("KUAL Runner"),
         help_text = _([[Run KUAL-style codes and manage their mappings.]]),
         sub_item_table = {
