@@ -1,6 +1,7 @@
 local Dispatcher = require("dispatcher")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
+local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Menu = require("ui/widget/menu")
 local FileChooser = require("ui/widget/filechooser")
@@ -219,7 +220,8 @@ function Launcher:showQuickMenu()
     local menu = Menu:new{
         title = _("Launcher"),
         item_table = self:getLauncherMenuTable(),
-        on_select = function() end,
+        is_borderless = true,
+        is_popout = false,
     }
     UIManager:show(menu)
 end
@@ -265,85 +267,173 @@ end
 
 function Launcher:showCreateDialog()
     local dlg
-    dlg = InputDialog:new{
-        title = _("Create launcher"),
+    dlg = MultiInputDialog:new{
+        title = _("Create new script"),
         fields = {
-            { id = "name", label = _("Name"), text = "My Script" },
-            { id = "path", label = _("Absolute path to .sh"), text = "/mnt/us/" },
+            {
+                text = "",
+                hint = _("Script name (without .sh)"),
+            },
+            {
+                text = DESKTOP_DIR,
+                hint = _("Destination folder"),
+            },
         },
         buttons = {
             {
-                { text = _("Browse"), icon = "appbar.folder.open", callback = function()
-                    self:openFileChooser(function(chosen)
-                        if chosen then dlg:setValue("path", chosen) end
-                    end)
-                end },
-                { text = _("Save"), callback = function()
-                    self:saveFromDialog(dlg, false)
-                end },
-                { text = _("Run and save"), icon = "appbar.player.play", callback = function()
-                    self:saveFromDialog(dlg, true)
-                end },
-                { id = "close", text = _("Cancel") },
-            }
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(dlg)
+                    end,
+                },
+                {
+                    text = _("Create"),
+                    is_enter_default = true,
+                    callback = function()
+                        local fields = dlg:getFields()
+                        local name = trim(fields[1] or "")
+                        local dest_dir = trim(fields[2] or DESKTOP_DIR)
+                        UIManager:close(dlg)
+
+                        if name == "" then
+                            UIManager:show(InfoMessage:new{ text = _("Please provide a script name.") })
+                            return
+                        end
+
+                        -- Remove .sh if user added it
+                        name = name:gsub("%.sh$", "")
+
+                        -- Create the file path
+                        ensure_dir(dest_dir)
+                        local script_path = path_join(dest_dir, name .. ".sh")
+
+                        -- Check if file already exists
+                        if file_exists(script_path) then
+                            UIManager:show(InfoMessage:new{ text = _("File already exists: ") .. script_path })
+                            return
+                        end
+
+                        -- Create new script with template
+                        local f = io.open(script_path, "w")
+                        if not f then
+                            UIManager:show(InfoMessage:new{ text = _("Failed to create file: ") .. script_path })
+                            return
+                        end
+
+                        -- Write template content
+                        f:write("#!/bin/sh\n")
+                        f:write("# " .. name .. "\n")
+                        f:write("# Created: " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n\n")
+                        f:write("# Add your shell commands here\n\n")
+                        f:close()
+
+                        -- Make executable
+                        os.execute(string.format("chmod +x '%s'", script_path))
+
+                        -- Save to settings
+                        local saved = self:getSaved()
+                        saved[#saved + 1] = { name = name, source = script_path, desktop = script_path, time = os.time() }
+                        self:saveSaved(saved)
+
+                        -- Show success message
+                        UIManager:show(InfoMessage:new{ 
+                            text = _("Script created!\n\nReopen the Launcher menu to see it in the list.\n\nOpening editor..."),
+                            timeout = 3,
+                        })
+
+                        -- Open in editor after a short delay
+                        UIManager:scheduleIn(1, function()
+                            self:openScriptInEditor(script_path)
+                        end)
+                    end,
+                },
+            },
         },
     }
     UIManager:show(dlg)
 end
 
-function Launcher:openFileChooser(on_done)
-    local chooser = FileChooser:new{
-        title = _("Choose .sh file"),
-        path = "/mnt/us",
-        select_file = true,
-        file_filter = function(name) return name:match("%.sh$") end,
-        on_apply = function(path)
-            UIManager:close(chooser)
-            if on_done then on_done(path) end
-        end,
-        on_cancel = function()
-            UIManager:close(chooser)
-            if on_done then on_done(nil) end
-        end,
+
+
+function Launcher:openScriptInEditor(script_path)
+    -- Read current file content
+    local file = io.open(script_path, "r")
+    if not file then
+        UIManager:show(InfoMessage:new{ text = _("Failed to open file: ") .. script_path })
+        return
+    end
+    local content = file:read("*a")
+    file:close()
+
+    -- Create custom editor dialog
+    local editor_dialog
+    editor_dialog = InputDialog:new{
+        title = script_path:match("([^/]+)$"),
+        input = content,
+        input_type = "text",
+        text_type = "code",
+        para_direction_rtl = false,
+        fullscreen = true,
+        condensed = false,
+        allow_newline = true,
+        cursor_at_end = false,
+        buttons = {
+            {
+                {
+                    text = _("Close"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(editor_dialog)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    callback = function()
+                        local edited_content = editor_dialog:getInputText()
+                        local f = io.open(script_path, "w")
+                        if f then
+                            f:write(edited_content)
+                            f:close()
+                            UIManager:show(InfoMessage:new{ 
+                                text = _("Script saved successfully!"),
+                                timeout = 2,
+                            })
+                        else
+                            UIManager:show(InfoMessage:new{ text = _("Failed to save file") })
+                        end
+                    end,
+                },
+                {
+                    text = _("Save & Run"),
+                    is_enter_default = true,
+                    callback = function()
+                        local edited_content = editor_dialog:getInputText()
+                        local f = io.open(script_path, "w")
+                        if f then
+                            f:write(edited_content)
+                            f:close()
+                            UIManager:close(editor_dialog)
+                            UIManager:show(InfoMessage:new{ 
+                                text = _("Running script..."),
+                                timeout = 1,
+                            })
+                            UIManager:scheduleIn(0.5, function()
+                                self:executeAndDisplay(script_path)
+                            end)
+                        else
+                            UIManager:show(InfoMessage:new{ text = _("Failed to save file") })
+                        end
+                    end,
+                },
+            },
+        },
     }
-    UIManager:show(chooser)
+    UIManager:show(editor_dialog)
 end
 
-function Launcher:saveFromDialog(dlg, do_run)
-    local name = trim(dlg:getValue("name"))
-    local path = trim(dlg:getValue("path"))
-    if name == "" or path == "" then
-        UIManager:show(InfoMessage:new{ text = _("Please provide both name and path.") })
-        return
-    end
-    if not file_exists(path) then
-        UIManager:show(InfoMessage:new{ text = _("File not found: ") .. path })
-        return
-    end
 
-    -- copy to Desktop and chmod
-    local copy_out = copy_and_chmod(path, DESKTOP_DIR)
-    -- persist
-    local saved = self:getSaved()
-    saved[#saved + 1] = { name = name, source = path, desktop = path_join(DESKTOP_DIR, path:match("([^/]+)$")), time = os.time() }
-    self:saveSaved(saved)
-
-    -- add alias to terminal emulator (best-effort; feature marker [optional])
-    -- [optional] This requires KOReader terminal emulator alias API, if present.
-    pcall(function()
-        local TermAliases = require("apps/terminal/aliases")
-        if TermAliases and TermAliases.addAlias then
-            TermAliases.addAlias(name, string.format("sh '%s'", saved[#saved].desktop))
-        end
-    end)
-
-    UIManager:show(InfoMessage:new{ text = _("Saved to Desktop. ") .. copy_out })
-    UIManager:close(dlg)
-
-    if do_run then
-        self:executeAndDisplay(saved[#saved].desktop)
-    end
-end
 
 function Launcher:executeAndDisplay(path)
     local ok, why, code, output = run_script(path)

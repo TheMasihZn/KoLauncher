@@ -1,88 +1,74 @@
 @echo off
-setlocal EnableDelayedExpansion
+setlocal EnableExtensions
 
+rem Resolve paths
 set "SCRIPT_DIR=%~dp0"
 set "SRC=%SCRIPT_DIR%mine\koreader\plugins"
 set "DEST=%SCRIPT_DIR%.compiled\koreader\plugins"
 
 if not exist "%SRC%" (
-    echo [ERROR] Source folder not found: "%SRC%"
-    exit /b 1
+  echo [ERROR] Source folder not found: "%SRC%"
+  exit /b 1
 )
 
-rem Create destination if it doesn't exist
-mkdir "%DEST%" 2>nul
+rem Ensure local compiled destination
+if not exist "%DEST%" mkdir "%DEST%" >nul 2>&1
 
-rem Process each plugin folder
+rem Stage 1: mirror workspace plugins to .compiled (non-destructive, exclude 'data')
 for /d %%D in ("%SRC%\*") do (
-    set "PLUGIN_NAME=%%~nxD"
-    echo Processing plugin: !PLUGIN_NAME!
-
-    rem Remove existing plugin folder except data directory
-    if exist "%DEST%\!PLUGIN_NAME!" (
-        for /d %%F in ("%DEST%\!PLUGIN_NAME!\*") do (
-            if /i not "%%~nxF"=="data" (
-                rmdir /s /q "%%F"
-            )
-        )
-        for %%F in ("%DEST%\!PLUGIN_NAME!\*.*") do (
-            del /q "%%F"
-        )
-    ) else (
-        mkdir "%DEST%\!PLUGIN_NAME!" 2>nul
-    )
-
-    rem Copy plugin contents using robocopy, excluding data directory
-    robocopy "%%D" "%DEST%\!PLUGIN_NAME!" /E /R:1 /W:1 /COPY:DAT /XD "%DEST%\!PLUGIN_NAME!\data" /NFL /NDL /NP
+  if not exist "%DEST%\%%~nxD" mkdir "%DEST%\%%~nxD" >nul 2>&1
+  echo Processing plugin: %%~nxD
+  robocopy "%%D" "%DEST%\%%~nxD" /E /R:1 /W:1 /COPY:DAT /XD "data" /NFL /NDL /NP >nul
 )
 
-if !ERRORLEVEL! LSS 8 (
-    echo [SUCCESS] KOReader files synchronized to local .compiled at %DEST%\
-    echo.
-    rem ------------------------------------------------------------
-    rem Now mirror from .compiled to the connected Kindle
-    rem Destination on Kindle: <Drive>:\koreader\plugins
-    set "KINDLE_DEST=%KINDLE_DRIVE%\koreader\plugins"
-    echo Kindle destination: "%KINDLE_DEST%"
+echo [SUCCESS] KOReader files synchronized to local .compiled at %DEST%\
+echo:
 
-    rem Ensure Kindle destination exists
-    mkdir "%KINDLE_DEST%" >nul 2>&1
+rem Stage 2: detect Kindle drive
+set "KINDLE_DRIVE="
+if not "%~1"=="" (
+  set "KINDLE_DRIVE=%~1"
+)
 
-    rem Clean each Kindle plugin folder except its data directory
-    for /d %%D in ("%DEST%\*") do (
-        set "PLUGIN_NAME=%%~nxD"
-        echo Preparing Kindle plugin: !PLUGIN_NAME!
-        if exist "%KINDLE_DEST%\!PLUGIN_NAME!" (
-            for /d %%F in ("%KINDLE_DEST%\!PLUGIN_NAME!\*") do (
-                if /i not "%%~nxF"=="data" (
-                    rmdir /s /q "%%F"
-                )
-            )
-            for %%F in ("%KINDLE_DEST%\!PLUGIN_NAME!\*.*") do (
-                del /q "%%F"
-            )
-        ) else (
-            mkdir "%KINDLE_DEST%\!PLUGIN_NAME!" >nul 2>&1
-        )
+if "%KINDLE_DRIVE%"=="" (
+  for %%X in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
+    if exist "%%X:\" if exist "%%X:\koreader" (
+      set "KINDLE_DRIVE=%%X:"
+      goto :FOUND_DRIVE
     )
-    rem Copy plugin contents from .compiled to Kindle only if the Kindle is found
-    for %%D in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
-        if exist "%%D:\koreader\plugins" (
-            set "KINDLE_DRIVE=%%D:"
-            set "KINDLE_DEST=%%D:\koreader\plugins"
-            
-            for /d %%D in ("%DEST%\*") do (
-                if exist "%KINDLE_DEST%\%%~nxD" (
-                    set "PLUGIN_NAME=%%~nxD"
-                    robocopy "%%D" "%KINDLE_DEST%\!PLUGIN_NAME!" /E /R:1 /W:1 /COPY:DAT /XD "%KINDLE_DEST%\!PLUGIN_NAME!\data" /NFL /NDL /NP
-                )
-            )
-        )
-    )
-    set "RC2=%ERRORLEVEL%"
+  )
+)
 
-    if !RC2! LSS 8 (
-        echo [SUCCESS] KOReader plugins deployed to Kindle at %KINDLE_DEST%\
-        echo.
-        exit /b 0
-    ) else (
+if "%KINDLE_DRIVE%"=="" (
+  rem Try to create expected path on any removable drive
+  for %%X in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
+    if exist "%%X:\" (
+      mkdir "%%X:\koreader\plugins" >nul 2>&1
+      if exist "%%X:\koreader\plugins" (
+        set "KINDLE_DRIVE=%%X:"
+        goto :FOUND_DRIVE
+      )
+    )
+  )
+)
+
+if "%KINDLE_DRIVE%"=="" (
+  echo [ERROR] Could not find Kindle drive (no X:\koreader or X:\koreader\plugins).
+  exit /b 1
+)
+
+:FOUND_DRIVE
+set "KINDLE_DEST=%KINDLE_DRIVE%\koreader\plugins"
+if not exist "%KINDLE_DEST%" mkdir "%KINDLE_DEST%" >nul 2>&1
+echo Kindle destination: "%KINDLE_DEST%"
+
+rem Stage 3: deploy to Kindle (non-destructive, exclude 'data')
+for /d %%P in ("%DEST%\*") do (
+  if not exist "%KINDLE_DEST%\%%~nxP" mkdir "%KINDLE_DEST%\%%~nxP" >nul 2>&1
+  echo Deploying plugin to Kindle: %%~nxP
+  robocopy "%%P" "%KINDLE_DEST%\%%~nxP" /E /R:1 /W:1 /COPY:DAT /XD "data" /NFL /NDL /NP >nul
+)
+
+echo [SUCCESS] KOReader plugins deployed to Kindle at %KINDLE_DEST%\
+echo:
+exit /b 0

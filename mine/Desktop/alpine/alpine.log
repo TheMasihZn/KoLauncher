@@ -1,0 +1,75 @@
+Log from Tue Nov 25 18:11:25 CEST 2025
+# Alpine ::: pre-start script
+Starting alpine linux
+# Alpine ::: script
+lab126_gui stop/waiting
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported high keycode 372 for name <I372> ignored
+>                   X11 cannot support keycodes above 255.
+>                   This warning only shows for the first high keycode.
+Errors from xkbcomp are not fatal to the X server
+_IceTransmkdir: Owner of /tmp/.ICE-unix should be set to root
+mate-session[11064]: WARNING: Could not connect to ConsoleKit: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.
+mate-session[11064]: WARNING: Could not connect to ConsoleKit: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.
+mate-session[11064]: WARNING: Could not parse desktop file /home/alpine/.config/autostart/onboard-autostart.desktop: Key file does not have key “Name” in group “Desktop Entry”
+mate-session[11064]: GLib-GObject-CRITICAL: object GsmAutostartApp 0xb67bca30 finalized while still in-construction
+mate-session[11064]: GLib-GObject-CRITICAL: Custom constructor for class GsmAutostartApp returned NULL (which is invalid). Please use GInitable instead.
+mate-session[11064]: WARNING: could not read /home/alpine/.config/autostart/onboard-autostart.desktop
+mate-session[11064]: WARNING: Could not parse desktop file /home/alpine/.config/autostart/at-spi-dbus-bus.desktop: Key file does not have key “Name” in group “Desktop Entry”
+mate-session[11064]: GLib-GObject-CRITICAL: object GsmAutostartApp 0xb67bcb68 finalized while still in-construction
+mate-session[11064]: GLib-GObject-CRITICAL: Custom constructor for class GsmAutostartApp returned NULL (which is invalid). Please use GInitable instead.
+mate-session[11064]: WARNING: could not read /home/alpine/.config/autostart/at-spi-dbus-bus.desktop
+mate-session[11064]: WARNING: Unable to find provider '' of required component 'dock'
+
+** (mate-settings-daemon:11092): WARNING **: 17:11:35.228: system bus not available: Exhausted all available authentication mechanisms (tried: EXTERNAL, DBUS_COOKIE_SHA1, ANONYMOUS) (available: EXTERNAL, DBUS_COOKIE_SHA1, ANONYMOUS)
+
+** (mate-settings-daemon:11092): WARNING **: 17:11:35.323: Failed to acquire ModemManager proxy: Exhausted all available authentication mechanisms (tried: EXTERNAL, DBUS_COOKIE_SHA1, ANONYMOUS) (available: EXTERNAL, DBUS_COOKIE_SHA1, ANONYMOUS)
+
+** (mate-settings-daemon:11092): WARNING **: 17:11:35.327: Failed to acquire NetworkManager proxy: Exhausted all available authentication mechanisms (tried: EXTERNAL, DBUS_COOKIE_SHA1, ANONYMOUS) (available: EXTERNAL, DBUS_COOKIE_SHA1, ANONYMOUS)
+[1764090696,000,xklavier.c:xkl_engine_start_listen/] 	The backend does not require manual layout management - but it is provided by the application
+Unable to open desktop file /usr/share/applications/firefox.desktop for panel launcher: No such file or directory
+GNOME_KEYRING_CONTROL=/home/alpine/.cache/keyring-6U6FG3
+SSH_AUTH_SOCK=/home/alpine/.cache/keyring-6U6FG3/ssh
+GNOME_KEYRING_CONTROL=/home/alpine/.cache/keyring-6U6FG3
+SSH_AUTH_SOCK=/home/alpine/.cache/keyring-6U6FG3/ssh
+GNOME_KEYRING_CONTROL=/home/alpine/.cache/keyring-6U6FG3
+
+(caja:11117): Gtk-WARNING **: 17:11:42.089: Failed to register client: GDBus.Error:org.gnome.SessionManager.AlreadyRegistered: Unable to register client
+SSH_AUTH_SOCK=/home/alpine/.cache/keyring-6U6FG3/ssh
+
+(polkit-mate-authentication-agent-1:11149): polkit-mate-1-WARNING **: 17:11:42.695: Error getting authority: Error initializing authority: Exhausted all available authentication mechanisms (tried: EXTERNAL, DBUS_COOKIE_SHA1, ANONYMOUS) (available: EXTERNAL, DBUS_COOKIE_SHA1, ANONYMOUS)
+*** ERROR ***
+TI:17:11:42	TH:0xb5e7a7a0	FI:gpm-main.c	FN:main,216
+ - This program cannot start until you start the dbus system service.
+It is <b>strongly recommended</b> you reboot your computer after starting this service.
+** Message: 17:11:43.825: Initializing gksu extension...
+Initializing caja-xattr-tags extension
+Initializing caja-image-converter extension
+Initializing caja-open-terminal extension
+17:11:48.783 WARNING Config: mousetweaks GSettings schema not found, mousetweaks integration disabled.
+mate-session[11064]: WARNING: Could not connect to ConsoleKit: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.
+mate-session[11064]: WARNING: Could not connect to ConsoleKit: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.
+mate-session[11064]: WARNING: Could not connect to ConsoleKit: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.
+mate-session[11064]: WARNING: Could not connect to ConsoleKit: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.
+Window manager warning: Buggy client sent a _NET_ACTIVE_WINDOW message with a timestamp of 0 for 0xe00003 (Bottom Pan)
+Window manager warning: meta_window_activate called by a pager with a 0 timestamp; the pager needs to be fixed.
+17:11:49.526 WARNING HardwareSensorTracker: Failed to connect to acpid, SW_TABLET_MODE detection disabled. ('/var/run/acpid.socket': [Errno 2] No such file or directory) 
+mate-session[11064]: WARNING: Could not connect to ConsoleKit: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.
+mate-session[11064]: WARNING: Could not connect to ConsoleKit: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.
+mate-session[11064]: WARNING: Could not connect to ConsoleKit: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.
+Gdk-Message: 17:12:13.299: mate-volume-control-status-icon: Fatal IO error 11 (Resource temporarily unavailable) on X server :1.
+
+Gdk-Message: 17:12:13.302: mate-screensaver: Fatal IO error 11 (Resource temporarily unavailable) on X server :1.
+
+sh: you need to specify whom to kill
+# Alpine ::: post-stop script
+Unmounting Alpine rootfs
+Gdk-Message: 17:12:13.432: onboard: Fatal IO error 22 (Invalid argument) on X server :1.
+
+umount: /var/tmp/alpine: device is busy
+umount: /var/tmp/alpine: device is busy
+Alpine is still mounted, trying again shortly..
+Alpine unmounted
+Disassociating loop device >>/dev/loop/1<<
+All done, starting kindle's gui.
+lab126_gui start/running
