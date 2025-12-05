@@ -83,7 +83,7 @@ function Launcher:init()
     -- register actions and menu
     self:onDispatcherRegisterActions()
     -- discover plugin dir for icon lookups
-    PLUGIN_DIR = (debug.getinfo(1, "S").source or ""):gsub("^@", ""):match("(.*[/\\])") or "/mnt/us/koreader/plugins/Launcher.koplugin/"
+    PLUGIN_DIR = (debug.getinfo(1, "S").source or ""):gsub("^@", ""):match("(.*[/\\])") or "/mnt/us/koreader/plugins/launcher.koplugin/"
     -- Register to menus (support both UIManager and self.ui paths depending on KOReader build)
     local menu_registered = false
     if UIManager and UIManager.menu and UIManager.menu.registerToMainMenu then

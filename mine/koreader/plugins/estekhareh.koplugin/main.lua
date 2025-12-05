@@ -5,16 +5,16 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
 -- Extend WidgetContainer like Calibre does
-local Estekhareh = WidgetContainer:extend{
+local Estekhareh = WidgetContainer:extend {
     name = "Estekhareh.",
-	is_doc_only = false,
+    is_doc_only = false,
 }
 
 -- Dynamically get the path where this plugin is located
 local function current_plugin_dir()
--- debug.getinfo(1, "S").source returns "@path/to/file"
--- sub(2) removes the '@'
-	return debug.getinfo(1, "S").source:sub(2):match("(.*[/\\])")
+    -- debug.getinfo(1, "S").source returns "@path/to/file"
+    -- sub(2) removes the '@'
+    return debug.getinfo(1, "S").source:sub(2):match("(.*[/\\])")
 end
 
 local KINDLE_PLUGIN_DIR = current_plugin_dir()
@@ -26,26 +26,27 @@ end
 local SCRIPT_PATH = KINDLE_PLUGIN_DIR .. "rand.sh"
 
 local function file_exists(path)
-	local f = io.open(path, "r")
-	if f then
-		f:close() return true
-	end
-	return false
+    local f = io.open(path, "r")
+    if f then
+        f:close()
+        return true
+    end
+    return false
 end
 
 function Estekhareh:init()
-	self:onDispatcherRegisterActions()
+    self:onDispatcherRegisterActions()
 
-	-- FIX: Use UIManager directly. 'self.ui' might be nil at this stage.
-	if UIManager.menu then
-  UIManager.menu:registerToMainMenu(self)
-		-- Also register to the reading screen (document) menu
-		if UIManager.menu.registerToDocumentMenu then
-   UIManager.menu:registerToDocumentMenu(self)
-		end
-	else
-  print("Estekhareh: UIManager.menu is not available.")
-	end
+    -- FIX: Use UIManager directly. 'self.ui' might be nil at this stage.
+    if UIManager.menu then
+        UIManager.menu:registerToMainMenu(self)
+        -- Also register to the reading screen (document) menu
+        if UIManager.menu.registerToDocumentMenu then
+            UIManager.menu:registerToDocumentMenu(self)
+        end
+    else
+        print("Estekhareh: UIManager.menu is not available.")
+    end
 end
 
 function Estekhareh:onDispatcherRegisterActions()
@@ -55,13 +56,12 @@ function Estekhareh:onDispatcherRegisterActions()
         title = _("Ask Estekhareh."),
         general = true,
     })
-	--Dispatcher:registerAction("run_sh_script", {
-	--	category = "none",
-	--	event = "RunCustomScript",
-	--	title = _("Run Any script"),
-	--	general = true,
-	--})
-
+    --Dispatcher:registerAction("run_sh_script", {
+    --	category = "none",
+    --	event = "RunCustomScript",
+    --	title = _("Run Any script"),
+    --	general = true,
+    --})
 end
 
 -- Handler for the legacy event (backward compatibility)
@@ -78,41 +78,42 @@ end
 
 -- Handler for the event registered above
 function Estekhareh:onRunCustomScript()
-	self:runScript()
-	return true
+    self:runScript()
+    return true
 end
 
 function Estekhareh:runScript()
-	if not file_exists(SCRIPT_PATH) then
-		UIManager:show(InfoMessage:new{ text = _("rand.sh not found at: ") .. (SCRIPT_PATH or "unknown") })
-		return
-	end
+    if not file_exists(SCRIPT_PATH) then
+        UIManager:show(InfoMessage:new { text = _("rand.sh not found at: ") .. (SCRIPT_PATH or "unknown") })
+        return
+    end
 
-	-- Run the script synchronously and capture its output
-	local cmd = string.format("sh '%s' 2>&1", SCRIPT_PATH)
-	local handle = io.popen(cmd)
-	local output = handle and handle:read("*a") or ""
-	local success, reason, code = true, "exit", 0
-	if handle then
-		local ok, why, status = handle:close()
-		success, reason, code = ok, why, status
-	else
-		success = false
-	end
+    -- Run the script synchronously and capture its output
+    local cmd = string.format("sh '%s' 2>&1", SCRIPT_PATH)
+    local handle = io.popen(cmd)
+    local output = handle and handle:read("*a") or ""
+    local success, reason, code = true, "exit", 0
+    if handle then
+        local ok, why, status = handle:close()
+        success, reason, code = ok, why, status
+    else
+        success = false
+    end
 
-	local function trim(s)
-		return (s or ""):gsub("^%s+", ""):gsub("%s+$", "")
-	end
-	output = trim(output)
+    local function trim(s)
+        return (s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    end
+    output = trim(output)
 
-	local msg
-	if not success then
-		msg = string.format(_("rand.sh failed (%s %s). Output:\n%s"), tostring(reason), tostring(code), output ~= "" and output or _("(no output)"))
-	else
-		msg = output ~= "" and output or _("rand.sh finished with no output.")
-	end
+    local msg
+    if not success then
+        msg = string.format(_("rand.sh failed (%s %s). Output:\n%s"), tostring(reason), tostring(code),
+            output ~= "" and output or _("(no output)"))
+    else
+        msg = output ~= "" and output or _("rand.sh finished with no output.")
+    end
 
-	UIManager:show(InfoMessage:new{ text = msg })
+    UIManager:show(InfoMessage:new { text = msg })
 end
 
 -- Called by KOReader when constructing the menu
@@ -134,7 +135,7 @@ end
 
 -- Called by KOReader when constructing the reader (document) menu
 function Estekhareh:addToDocumentMenu(menu_items)
--- Reuse the same structure as in the main menu
+    -- Reuse the same structure as in the main menu
     menu_items.Estekhareh = {
         text = _("Estekhareh"),
         -- Show an icon in the reader/document menu
