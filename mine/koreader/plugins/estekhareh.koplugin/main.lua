@@ -1,5 +1,6 @@
 local Dispatcher = require("dispatcher")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
@@ -94,8 +95,7 @@ function Estekhareh:runScript()
     local output = handle and handle:read("*a") or ""
     local success, reason, code = true, "exit", 0
     if handle then
-        local ok, why, status = handle:close()
-        success, reason, code = ok, why, status
+        success, reason, code = handle:close()
     else
         success = false
     end
@@ -113,7 +113,30 @@ function Estekhareh:runScript()
         msg = output ~= "" and output or _("rand.sh finished with no output.")
     end
 
-    UIManager:show(InfoMessage:new { text = msg })
+    local input_dialog
+    input_dialog = InputDialog:new({
+        title = _("Script Output"),
+        description = msg,
+        input = "", -- Initial value for the text field
+        buttons = {
+            {
+                text = _("Cancel"),
+                callback = function()
+                    UIManager:close(input_dialog)
+                end,
+            },
+            {
+                text = _("Save"),
+                callback = function()
+                    local saved_text = input_dialog:getInputValue()
+                    -- Add your save logic here, e.g.:
+                    -- self:saveText(saved_text)
+                    UIManager:close(input_dialog)
+                end,
+            },
+        },
+    })
+    UIManager:show(input_dialog)
 end
 
 -- Called by KOReader when constructing the menu
