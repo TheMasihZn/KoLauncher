@@ -24,51 +24,47 @@ for /d %%D in ("%SRC%\*") do (
 echo [SUCCESS] KOReader files synchronized to local .compiled at %DEST%\
 echo:
 
-rem Stage 2: detect Kindle drive
-set "KINDLE_DRIVE="
+rem Stage 2: SFTP configuration
+set "SFTP_HOST=192.168.218.78"
+set "SFTP_PORT=2222"
+set "SFTP_USER=root"
+set "SFTP_REMOTE_BASE=/mnt/us/koreader"
+
+rem TIP: To avoid entering a password every time, use SSH keys:
+rem 1. Generate keys locally: ssh-keygen -t ed25519
+rem 2. Copy to Kindle: type %USERPROFILE%\.ssh\id_ed25519.pub | ssh -p %SFTP_PORT% %SFTP_USER%@%SFTP_HOST% "cat >> /root/.ssh/authorized_keys"
+
 if not "%~1"=="" (
-  set "KINDLE_DRIVE=%~1"
+  set "SFTP_HOST=%~1"
 )
 
-if "%KINDLE_DRIVE%"=="" (
-  for %%X in (A B E F G H I J K L M N O P Q R S T U V W X Y Z) do (
-    if exist "%%X:\" if exist "%%X:\koreader" (
-      set "KINDLE_DRIVE=%%X:"
-      goto :FOUND_DRIVE
-    )
+echo Connecting to SFTP: %SFTP_USER%@%SFTP_HOST%:%SFTP_PORT%
+echo Remote base path: %SFTP_REMOTE_BASE%
+
+rem Stage 3: deploy to Kindle via SFTP
+echo Deploying plugins to Kindle via SFTP
+echo Note: If prompted, enter the password for %SFTP_USER%@%SFTP_HOST%
+
+rem We use scp for recursive copy. 
+rem This copies the local 'plugins' folder (%DEST%) into the remote base path.
+rem -o StrictHostKeyChecking=accept-new allows automatic acceptance of new host keys.
+scp -o StrictHostKeyChecking=accept-new -P %SFTP_PORT% -r "%DEST%" "%SFTP_USER%@%SFTP_HOST%:%SFTP_REMOTE_BASE%/"
+
+echo ...
+
+if %ERRORLEVEL% equ 0 (
+  echo [SUCCESS] KOReader plugins deployed to Kindle at %SFTP_HOST%:%SFTP_REMOTE_BASE%/plugins
+  
+  echo:
+  set /p "RUN_SHELL=Open interactive SSH shell? (y/n): "
+  if /i "%RUN_SHELL%"=="y" (
+    echo Opening SSH shell to %SFTP_HOST%...
+    ssh -o StrictHostKeyChecking=accept-new -t -p %SFTP_PORT% "%SFTP_USER%@%SFTP_HOST%"
   )
-)
-
-if "%KINDLE_DRIVE%"=="" (
-  rem Try to create expected path on any removable drive
-  for %%X in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
-    if exist "%%X:\" (
-      mkdir "%%X:\koreader\plugins" >nul 2>&1
-      if exist "%%X:\koreader\plugins" (
-        set "KINDLE_DRIVE=%%X:"
-        goto :FOUND_DRIVE
-      )
-    )
-  )
-)
-
-if "%KINDLE_DRIVE%"=="" (
-  echo [ERROR] Could not find Kindle drive (no X:\koreader or X:\koreader\plugins).
+) else (
+  echo [ERROR] Failed to deploy plugins via SFTP.
   exit /b 1
 )
 
-:FOUND_DRIVE
-set "KINDLE_DEST=%KINDLE_DRIVE%\koreader\plugins"
-if not exist "%KINDLE_DEST%" mkdir "%KINDLE_DEST%" >nul 2>&1
-echo Kindle destination: "%KINDLE_DEST%"
-
-rem Stage 3: deploy to Kindle (non-destructive, exclude 'data')
-for /d %%P in ("%DEST%\*") do (
-  if not exist "%KINDLE_DEST%\%%~nxP" mkdir "%KINDLE_DEST%\%%~nxP" >nul 2>&1
-  echo Deploying plugin to Kindle: %%~nxP
-  robocopy "%%P" "%KINDLE_DEST%\%%~nxP" /E /R:1 /W:1 /COPY:DAT /XD "data" /NFL /NDL /NP >nul
-)
-
-echo [SUCCESS] KOReader plugins deployed to Kindle at %KINDLE_DEST%\
 echo:
 exit /b 0
