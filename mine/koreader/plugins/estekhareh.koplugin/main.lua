@@ -105,6 +105,14 @@ function Estekhareh:runScript()
     end
     output = trim(output)
 
+    local chosen_index
+    if success and output ~= "" then
+        chosen_index = output:match("^(%d+)")
+        if chosen_index then
+            output = output:gsub("^%d+\n?", "")
+        end
+    end
+
     local msg
     if not success then
         msg = string.format(_("rand.sh failed (%s %s). Output:\n%s"), tostring(reason), tostring(code),
@@ -128,9 +136,14 @@ function Estekhareh:runScript()
             {
                 text = _("Save"),
                 callback = function()
-                    local saved_text = input_dialog:getInputValue()
-                    -- Add your save logic here, e.g.:
-                    -- self:saveText(saved_text)
+                    if chosen_index then
+                        local log_path = KINDLE_PLUGIN_DIR .. "history.ssv"
+                        local f = io.open(log_path, "a")
+                        if f then
+                            f:write(chosen_index .. " ")
+                            f:close()
+                        end
+                    end
                     UIManager:close(input_dialog)
                 end,
             },

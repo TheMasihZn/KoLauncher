@@ -127,15 +127,18 @@ main() {
         exit 1
     fi
 
-    local n
-    n=$(next_rand)
+    local k
+    k=$(next_rand)
+    local n=$(( 2 * k + 1 ))
+    local row_idx=$(( k + 2 ))
 
     local row
-    # Capture the N-th row (if any)
-    row=$(select_row_by_number "$csv" "$n")
+    # Capture the row (k-th data row, which is NR=k+2)
+    row=$(select_row_by_number "$csv" "$row_idx")
     local code=$?
 
     if [ $code -eq 0 ] && [ -n "$row" ]; then
+        echo "$n"
         # Print each column of the selected row on a new line (trim spaces)
         # Changed: used 'echo | awk' instead of bash '<<<'
         echo "$row" | awk -F',' '{
