@@ -83,14 +83,19 @@ function Estekhareh:onRunCustomScript()
     return true
 end
 
-function Estekhareh:runScript()
+function Estekhareh:runScript(requested_index)
     if not file_exists(SCRIPT_PATH) then
         UIManager:show(InfoMessage:new { text = _("rand.sh not found at: ") .. (SCRIPT_PATH or "unknown") })
         return
     end
 
     -- Run the script synchronously and capture its output
-    local cmd = string.format("sh '%s' 2>&1", SCRIPT_PATH)
+    local cmd
+    if requested_index then
+        cmd = string.format("sh '%s' %d 2>&1", SCRIPT_PATH, requested_index)
+    else
+        cmd = string.format("sh '%s' 2>&1", SCRIPT_PATH)
+    end
     local handle = io.popen(cmd)
     local output = handle and handle:read("*a") or ""
     local success, reason, code = true, "exit", 0
@@ -122,32 +127,61 @@ function Estekhareh:runScript()
     end
 
     local input_dialog
+    local buttons = {
+        {
+            text = _("Cancel"),
+            callback = function()
+                UIManager:close(input_dialog)
+            end,
+        },
+    }
+
+    if chosen_index then
+        local n = tonumber(chosen_index)
+        -- Previous button
+        if n > 1 then
+            table.insert(buttons, {
+                icon = "chevron_left",
+                radius = 50,
+                callback = function()
+                    UIManager:close(input_dialog)
+                    self:runScript(n - 2)
+                end,
+            })
+        end
+
+        -- Next button
+        if n < 603 then
+            table.insert(buttons, {
+                icon = "chevron_right",
+                radius = 50,
+                callback = function()
+                    UIManager:close(input_dialog)
+                    self:runScript(n + 2)
+                end,
+            })
+        end
+
+        -- Save button
+        table.insert(buttons, {
+            text = _("Save"),
+            callback = function()
+                local log_path = KINDLE_PLUGIN_DIR .. "history.ssv"
+                local f = io.open(log_path, "a")
+                if f then
+                    f:write(chosen_index .. " ")
+                    f:close()
+                end
+                UIManager:close(input_dialog)
+            end,
+        })
+    end
+
     input_dialog = InputDialog:new({
         title = _("Script Output"),
         description = msg,
         input = "", -- Initial value for the text field
-        buttons = {
-            {
-                text = _("Cancel"),
-                callback = function()
-                    UIManager:close(input_dialog)
-                end,
-            },
-            {
-                text = _("Save"),
-                callback = function()
-                    if chosen_index then
-                        local log_path = KINDLE_PLUGIN_DIR .. "history.ssv"
-                        local f = io.open(log_path, "a")
-                        if f then
-                            f:write(chosen_index .. " ")
-                            f:close()
-                        end
-                    end
-                    UIManager:close(input_dialog)
-                end,
-            },
-        },
+        buttons = buttons,
     })
     UIManager:show(input_dialog)
 end

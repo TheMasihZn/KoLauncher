@@ -128,9 +128,24 @@ main() {
     fi
 
     local k
-    k=$(next_rand)
-    local n=$(( 2 * k + 1 ))
-    local row_idx=$(( k + 2 ))
+    local n
+    local row_idx
+
+    # If first argument is a number, use it as n
+    if [[ "$1" =~ ^[0-9]+$ ]]; then
+        n=$1
+        k=$(( (n - 1) / 2 ))
+        row_idx=$(( k + 2 ))
+        # Check if it is odd and in range [1, 603]
+        if [ $(( n % 2 )) -eq 0 ] || [ $n -lt 1 ] || [ $n -gt 603 ]; then
+            echo "Invalid index: $n (must be odd and between 1 and 603)" >&2
+            exit 2
+        fi
+    else
+        k=$(next_rand)
+        n=$(( 2 * k + 1 ))
+        row_idx=$(( k + 2 ))
+    fi
 
     local row
     # Capture the row (k-th data row, which is NR=k+2)
